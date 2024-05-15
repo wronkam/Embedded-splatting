@@ -12,6 +12,8 @@
 import os
 import random
 import json
+
+from scene.utils import stats
 from utils.system_utils import searchForMaxIteration
 from scene.dataset_readers import sceneLoadTypeCallbacks
 from scene.gaussian_model import GaussianModel
@@ -45,6 +47,7 @@ class Scene:
         elif os.path.exists(os.path.join(args.source_path, "transforms_train.json")):
             print("Found transforms_train.json file, assuming Blender data set!")
             scene_info = sceneLoadTypeCallbacks["Blender"](args.source_path, args.white_background, args.eval)
+            print('loaded',stats(scene_info.point_cloud.colors))
         else:
             assert False, "Could not recognize scene type!"
 

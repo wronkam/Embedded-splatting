@@ -12,6 +12,11 @@
 import os
 import torch
 from random import randint
+
+import torchvision.transforms.functional
+from sympy.physics.control.control_plots import plt
+
+from scene.utils import plt_scatter
 from utils.loss_utils import l1_loss, ssim
 from gaussian_renderer import render, network_gui
 import sys
@@ -25,17 +30,20 @@ from arguments import ModelParams, PipelineParams, OptimizationParams
 try:
     from torch.utils.tensorboard import SummaryWriter
     TENSORBOARD_FOUND = True
-except ImportError:
+except ImportError as e:
+    raise e
     TENSORBOARD_FOUND = False
 
-def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from):
+def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from,
+             ff_args = None,test_every_n=None,args=None):
     first_iter = 0
     tb_writer = prepare_output_and_logger(dataset)
-    gaussians = GaussianModel(dataset.sh_degree)
+    gaussians = GaussianModel(dataset.sh_degree,ff_args)
     scene = Scene(dataset, gaussians)
     gaussians.training_setup(opt)
     if checkpoint:
         (model_params, first_iter) = torch.load(checkpoint)
+        print(model_params)
         gaussians.restore(model_params, opt)
 
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
@@ -43,6 +51,10 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
+
+    if test_every_n is not None:
+        print(f"Testing every {test_every_n} iteration")
+        testing_iterations = list(range(0,opt.iterations+1,args.test_every_n))
 
     viewpoint_stack = None
     ema_loss_for_log = 0.0
@@ -88,7 +100,44 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
+
+        if iteration in testing_iterations:
+            if not os.path.isdir(os.path.join(scene.model_path,'samples')):
+                os.makedirs(os.path.join(scene.model_path,'samples'),exist_ok=True)
+            with torch.no_grad():
+                f = plt.figure(figsize=(24, 24))
+                ax = f.add_subplot(221)
+                ax.imshow(torch.clip(gt_image.clone().detach(),0,1).permute(1,2,0).cpu().numpy())
+                ax = f.add_subplot(222)
+                ax.imshow(torch.clip(image.clone().detach(),0,1).cpu().permute(1,2,0).numpy())
+                xyzs = gaussians.get_xyz
+                ax = f.add_subplot(223,projection='3d')
+                sample_num = 15000
+                plt_scatter(xyzs,ax,c='r',alpha=0.5,sample=sample_num)
+                ax = f.add_subplot(224,projection='3d')
+                sample_xyz = xyzs
+                if gaussians.ff:
+                    sample_xyz = torch.rand(sample_num,gaussians._xyz.shape[-1]).to(xyzs.device)# [0,1]
+                    # TODO: c can be 2D array with rgb rows, if you pca sample to 3d here uou could colour it to show how space is bent
+                    sample_xyz = gaussians.ff_net(sample_xyz)
+                plt_scatter(sample_xyz,ax,c='g',alpha=0.5,sample=sample_num)
+                f.suptitle(f"GT vs generated --- {iteration}")
+                f.savefig(os.path.join(scene.model_path,'samples',f"sample_{iteration}.jpg"))
+                plt.close()
+
+        if args.blur > iteration:
+            # 17 -> 3 kernel size
+            ks = 3 + 2*( (7*(1-iteration/args.blur)) //1 )
+            # 2 -> 1e-6
+            sigma = 1e-6 + 3*(1-iteration/args.blur)
+            image = torchvision.transforms.functional.gaussian_blur(image,sigma=sigma,kernel_size=ks)
+            gt_image = torchvision.transforms.functional.gaussian_blur(gt_image, sigma=sigma, kernel_size=ks)
+
+        # Loss
         Ll1 = l1_loss(image, gt_image)
+        if image.min() == image.max():
+            print('im',image.min(),image.mean(),image.max())
+            exit(1)
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
         loss.backward()
 
@@ -190,7 +239,22 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
             tb_writer.add_scalar('total_points', scene.gaussians.get_xyz.shape[0], iteration)
         torch.cuda.empty_cache()
 
+
+def parse_ff_args(ff_args):
+    if ff_args is None:
+        return None
+    assert len(ff_args)%2 == 0
+    args = {}
+    for i in range(0,len(ff_args),2):
+        args[ff_args[i]] = ff_args[i+1]
+    return args
+
+
 if __name__ == "__main__":
+
+    torch.manual_seed(0)
+    torch.cuda.set_device(torch.device("cuda:0"))
+
     # Set up command line argument parser
     parser = ArgumentParser(description="Training script parameters")
     lp = ModelParams(parser)
@@ -205,9 +269,14 @@ if __name__ == "__main__":
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
     parser.add_argument("--start_checkpoint", type=str, default = None)
+    parser.add_argument("--ff-args",nargs="+", type=str, default = None)
+    parser.add_argument('--test-every-n', type=int, default=None)
+    parser.add_argument('--blur', type=int, default=0)
     args = parser.parse_args(sys.argv[1:])
     args.save_iterations.append(args.iterations)
-    
+
+    ff_args = parse_ff_args(args.ff_args)
+
     print("Optimizing " + args.model_path)
 
     # Initialize system state (RNG)
@@ -216,7 +285,8 @@ if __name__ == "__main__":
     # Start GUI server, configure and run training
     network_gui.init(args.ip, args.port)
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
-    training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from)
+    training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from,
+             ff_args, args.test_every_n, args=args)
 
     # All done
     print("\nTraining complete.")
