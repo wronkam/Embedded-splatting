@@ -10,6 +10,8 @@
 #
 
 import os
+import shutil
+
 import torch
 from random import randint
 
@@ -171,7 +173,7 @@ def prepare_output_and_logger(args,notebook):
 
         args.model_path = os.path.join("./output/", unique_str)
         if os.path.exists(args.model_path):
-            os.rmdir(args.model_path)
+            shutil.rmtree(args.model_path)
         
     # Set up output folder
     print("Output folder: {}".format(args.model_path))
