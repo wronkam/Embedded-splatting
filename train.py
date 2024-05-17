@@ -36,7 +36,7 @@ except ImportError as e:
 def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from,
              ff_args = None,test_every_n=None,args=None):
     first_iter = 0
-    tb_writer = prepare_output_and_logger(dataset)
+    tb_writer = prepare_output_and_logger(dataset,args.notebook)
     gaussians = GaussianModel(dataset.sh_degree,ff_args)
     scene = Scene(dataset, gaussians)
     gaussians.training_setup(opt)
@@ -160,11 +160,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
 
-def prepare_output_and_logger(args):    
+def prepare_output_and_logger(args,notebook):
     if not args.model_path:
         if os.getenv('OAR_JOB_ID'):
             unique_str=os.getenv('OAR_JOB_ID')[0:10]
-        elif args.notebook:
+        elif notebook:
             unique_str='notebook'
         else:
             unique_str = str(uuid.uuid4())[0:10]
