@@ -23,7 +23,6 @@ import sys
 from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
 import uuid
-from tqdm import tqdm
 from utils.image_utils import psnr
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
@@ -58,6 +57,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
     viewpoint_stack = None
     ema_loss_for_log = 0.0
+    if args.notebook:
+        from tqdm.notebook import tqdm
+        if ff_args is not None:
+            ff_args['notebook'] = True
+    else:
+        from tqdm import tqdm
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
     for iteration in range(first_iter, opt.iterations + 1):        
@@ -98,32 +103,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         render_pkg = render(viewpoint_cam, gaussians, pipe, bg)
         image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
 
-        # Loss
         gt_image = viewpoint_cam.original_image.cuda()
-
-        if iteration in testing_iterations:
-            if not os.path.isdir(os.path.join(scene.model_path,'samples')):
-                os.makedirs(os.path.join(scene.model_path,'samples'),exist_ok=True)
-            with torch.no_grad():
-                f = plt.figure(figsize=(24, 24))
-                ax = f.add_subplot(221)
-                ax.imshow(torch.clip(gt_image.clone().detach(),0,1).permute(1,2,0).cpu().numpy())
-                ax = f.add_subplot(222)
-                ax.imshow(torch.clip(image.clone().detach(),0,1).cpu().permute(1,2,0).numpy())
-                xyzs = gaussians.get_xyz
-                ax = f.add_subplot(223,projection='3d')
-                sample_num = 15000
-                plt_scatter(xyzs,ax,c='r',alpha=0.5,sample=sample_num)
-                ax = f.add_subplot(224,projection='3d')
-                sample_xyz = xyzs
-                if gaussians.ff:
-                    sample_xyz = torch.rand(sample_num,gaussians._xyz.shape[-1]).to(xyzs.device)# [0,1]
-                    # TODO: c can be 2D array with rgb rows, if you pca sample to 3d here uou could colour it to show how space is bent
-                    sample_xyz = gaussians.ff_net(sample_xyz)
-                plt_scatter(sample_xyz,ax,c='g',alpha=0.5,sample=sample_num)
-                f.suptitle(f"GT vs generated --- {iteration}")
-                f.savefig(os.path.join(scene.model_path,'samples',f"sample_{iteration}.jpg"))
-                plt.close()
 
         if args.blur > iteration:
             # 17 -> 3 kernel size
@@ -137,7 +117,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         Ll1 = l1_loss(image, gt_image)
         if image.min() == image.max():
             print('im',image.min(),image.mean(),image.max())
-            exit(1)
+            raise RuntimeError('Empty image, model collapsed')
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
         loss.backward()
 
@@ -153,7 +133,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 progress_bar.close()
 
             # Log and save
-            training_report(tb_writer, iteration, Ll1, loss, l1_loss, iter_start.elapsed_time(iter_end), testing_iterations, scene, render, (pipe, background))
+            training_report(tb_writer, iteration, Ll1, loss, l1_loss, iter_start.elapsed_time(iter_end), testing_iterations, scene, render, (pipe, background),gaussians,progress_bar)
             if (iteration in saving_iterations):
                 print("\n[ITER {}] Saving Gaussians".format(iteration))
                 scene.save(iteration)
@@ -183,10 +163,15 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 def prepare_output_and_logger(args):    
     if not args.model_path:
         if os.getenv('OAR_JOB_ID'):
-            unique_str=os.getenv('OAR_JOB_ID')
+            unique_str=os.getenv('OAR_JOB_ID')[0:10]
+        elif args.notebook:
+            unique_str='notebook'
         else:
-            unique_str = str(uuid.uuid4())
-        args.model_path = os.path.join("./output/", unique_str[0:10])
+            unique_str = str(uuid.uuid4())[0:10]
+
+        args.model_path = os.path.join("./output/", unique_str)
+        if os.path.exists(args.model_path):
+            os.rmdir(args.model_path)
         
     # Set up output folder
     print("Output folder: {}".format(args.model_path))
@@ -202,7 +187,7 @@ def prepare_output_and_logger(args):
         print("Tensorboard not available: not logging progress")
     return tb_writer
 
-def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, scene : Scene, renderFunc, renderArgs):
+def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, scene : Scene, renderFunc, renderArgs,gaussian, progress_bar):
     if tb_writer:
         tb_writer.add_scalar('train_loss_patches/l1_loss', Ll1.item(), iteration)
         tb_writer.add_scalar('train_loss_patches/total_loss', loss.item(), iteration)
@@ -228,8 +213,9 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
                     l1_test += l1_loss(image, gt_image).mean().double()
                     psnr_test += psnr(image, gt_image).mean().double()
                 psnr_test /= len(config['cameras'])
-                l1_test /= len(config['cameras'])          
-                print("\n[ITER {}] Evaluating {}: L1 {} PSNR {}".format(iteration, config['name'], l1_test, psnr_test))
+                l1_test /= len(config['cameras'])
+                progress_bar.write("\n[ITER {}] Evaluating {}: L1 {} PSNR {}".format(iteration, config['name'], l1_test, psnr_test))
+                # print("\n[ITER {}] Evaluating {}: L1 {} PSNR {}".format(iteration, config['name'], l1_test, psnr_test))
                 if tb_writer:
                     tb_writer.add_scalar(config['name'] + '/loss_viewpoint - l1_loss', l1_test, iteration)
                     tb_writer.add_scalar(config['name'] + '/loss_viewpoint - psnr', psnr_test, iteration)
@@ -237,8 +223,27 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
         if tb_writer:
             tb_writer.add_histogram("scene/opacity_histogram", scene.gaussians.get_opacity, iteration)
             tb_writer.add_scalar('total_points', scene.gaussians.get_xyz.shape[0], iteration)
-        torch.cuda.empty_cache()
+            if gaussian.ff:
+                with torch.no_grad():
+                    f = plt.subplots(figsize=(24, 24))
+                    xyzs = gaussian.get_xyz
+                    ax = plt.axes(projection="3d")
+                    sample_num = 15000
+                    plt_scatter(xyzs, ax, c='r', alpha=0.5, sample=sample_num)
+                    tb_writer.add_figure('Gaussians positions', plt.gcf(),global_step=iteration)
+                    plt.close()
 
+                    f = plt.subplots(figsize=(24, 24))
+                    ax = plt.axes(projection="3d")
+                    sample_xyz = xyzs
+                    if gaussian.ff:
+                        sample_xyz = torch.rand(sample_num, gaussian._xyz.shape[-1]).to(xyzs.device)  # [0,1]
+                        # TODO: c can be 2D array with rgb rows, if you pca sample to 3d here uou could colour it to show how space is bent
+                        sample_xyz = gaussian.ff_net(sample_xyz)
+                    plt_scatter(sample_xyz, ax, c='g', alpha=0.5, sample=sample_num)
+                    tb_writer.add_figure('Embedding cube projection', plt.gcf(),global_step=iteration)
+                    plt.close()
+        torch.cuda.empty_cache()
 
 def parse_ff_args(ff_args):
     if ff_args is None:
@@ -272,6 +277,8 @@ if __name__ == "__main__":
     parser.add_argument("--ff-args",nargs="+", type=str, default = None)
     parser.add_argument('--test-every-n', type=int, default=None)
     parser.add_argument('--blur', type=int, default=0)
+    parser.add_argument('--notebook', action='store_true',default=False)
+
     args = parser.parse_args(sys.argv[1:])
     args.save_iterations.append(args.iterations)
 

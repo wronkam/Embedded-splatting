@@ -23,6 +23,7 @@ dependencies:
     - submodules/diff-gaussian-rasterization
     - submodules/simple-knn
     - tensorboard
+    - chamferdist
     - packaging
     - matplotlib
 # why yes I did repurpose my GaMeS env

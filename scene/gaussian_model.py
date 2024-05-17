@@ -73,6 +73,10 @@ class FFNet(nn.Module):
         self.bn = get_if_not_none(ff_args, 'bn', False, bool)
         self.normalize = get_if_not_none(ff_args, 'norm', False, bool)
 
+        if get_if_not_none(ff_args, 'notebook', False, None):
+            # overwrite with notebook version
+            from tqdm.notebook import trange, tqdm
+
         self.initial = get_if_not_none(ff_args, 'init', 0, int)
         self.rand_color = get_if_not_none(ff_args, 'rand_color', False, bool)
         print('rand_color', self.rand_color)
