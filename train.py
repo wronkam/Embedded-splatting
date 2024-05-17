@@ -14,6 +14,7 @@ import shutil
 
 import torch
 from random import randint
+from tqdm import tqdm
 
 import torchvision.transforms.functional
 from sympy.physics.control.control_plots import plt
@@ -60,11 +61,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     viewpoint_stack = None
     ema_loss_for_log = 0.0
     if args.notebook:
-        from tqdm.notebook import tqdm
         if ff_args is not None:
             ff_args['notebook'] = True
-    else:
-        from tqdm import tqdm
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
     for iteration in range(first_iter, opt.iterations + 1):        
