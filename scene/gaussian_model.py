@@ -31,6 +31,8 @@ from chamferdist.chamfer import ChamferDistance
 def get_if_not_none(dictionary, key, default, map=None):
     if key in dictionary:
         if map is not None:
+            if map is int:
+                return int(float(dictionary[key]))
             return map(dictionary[key])
         else:
             return dictionary[key]
