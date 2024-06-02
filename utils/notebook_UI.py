@@ -43,20 +43,20 @@ def show_widgets(items, command):
         with output:
             command['text'] = "train.py -s /content/Embedded-splatting/nerf_synthetic/{} --notebook --test-every-n {} --iterations {} -r {} {}".format(
                 items['dataset'].value,
-                items['sampling'].value,
-                items['iterations'].value,
-                items['resolution'].value,
+                int(items['sampling'].value),
+                int(items['iterations'].value),
+                int(items['resolution'].value),
                 "" if items['embedding_type'].value=="none" else "--ff-args {} {} {} {} {} {} {} {} {} {}".format(
                     f"type {items['embedding_type'].value}",
-                    f"layers {items['layers'].value}",
-                    f"width {items['width'].value}",
-                    f"input_size {items['input_size'].value}",
-                    f"embeding_size {items['embedding_size'].value}",
+                    f"layers {int(items['layers'].value)}",
+                    f"width {int(items['width'].value)}",
+                    f"input_size {int(items['input_size'].value)}",
+                    f"embeding_size {int(items['embedding_size'].value)}",
                     f"{'learnable True' if items['learnable'].value else ''}",
-                    f"init {items['init'].value}",
+                    f"init {int(items['init'].value)}",
                     f"{'rand_color True' if items['rand_color'].value else ''}",
                     f"{'normalize True' if items['normalize'].value else ''}",
-                    f"residual {items['residual'].value}",
+                    f"residual {int(items['residual'].value)}",
                 )
             )
             print("Command:",command['text'])
