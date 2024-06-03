@@ -1,4 +1,7 @@
 import ipywidgets as widgets
+
+def get_default():
+    return "train.py -s /content/Embedded-splatting/nerf_synthetic/drums --notebook --test-every-n 500 --iterations 15000 -r 8 --ff-args type positional layers 2 width 128 input_size 4 embeding_size 16 learnable True init 200 rand_color True  residual -1"
 def get_widgets():
     items = {}
     layout = widgets.Layout(display='flex',
