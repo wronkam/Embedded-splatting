@@ -514,12 +514,12 @@ h3.figtitle {
     <li><strong>none</strong>: no network, no embedding</li>
     <li><strong>net</strong>: just network, no embedding</li>
     <li><strong>fft</strong>: we calculate the <a href="https://en.wikipedia.org/wiki/Fast_Fourier_transform">fast fourier transform</a> of the positional parameter. Does not work well, but it is here.</li>
-    <li><strong>positional</strong> and <strong>gff</strong>: <a href="https://arxiv.org/abs/1706.03762">Positional embedding</a> like in tranformer models (yes, like Chat-GPT) and its cousin <a href="https://arxiv.org/abs/2006.10739">Gaussian fourier feature</a>. Both are some form of $[\sin(x),\cos(x)]$ embedding for each parameter variable, both can have <strong>embeding size</strong> set to change how long the embedding is (the $N$).
-    Positional has set values of $[a_1,a_2,...]$ variables as progressivly smaller values $[1,\frac{1}{2},\frac{1}{4},...]$, and GFF uses random values from normal (gaussian) distribution as its variables. Both can be <strong>learnable</strong>, thst is, model will fine tune the values of $[a_1,a_2,...]$ variables. Those 2 show the best (similar) results.</li>
+    <li><strong>positional</strong> and <strong>gff</strong>: <a href="https://arxiv.org/abs/1706.03762">Positional embedding</a> like in transformer models (yes, like Chat-GPT) and its cousin <a href="https://arxiv.org/abs/2006.10739">Gaussian fourier feature</a>. Both are some form of $[\sin(x),\cos(x)]$ embedding for each parameter variable, both can have <strong>embedding size</strong> set to change how long the embedding is (the $N$).
+    Positional has set values of [a<sub>1</sub>,a<sub>2</sub>,...]$ variables as progressively smaller values $[1,1/2,1/4,...]$, and GFF uses random values from normal (gaussian) distribution as its variables. Both can be <strong>learnable</strong>, thst is, model will fine tune the values of $[a_1,a_2,...]$ variables. Those 2 show the best (similar) results.</li>
     </ul>
-    <p><img width="25%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/embed.png" alt="embde"></p>
+    <p><img width="45%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/embed.png" alt="embde"></p>
     <h3 id="last-one-">Last one, I promise.</h3>
-    <p>You might want to ask if we need to change the training process so the model learns how to use the network. Here is the fun part, we do not. The network is optimized just like position parameters, only by comparing reconstruction and the original image. Additionally to make training a bit simpler so splats are not completely randomly spaced at start, we use Chamfer distance to place them at start, more less, where splats from original models are.</p>
+    <p>You might want to ask if we need to change the training process so the model learns how to use the network. Here is the fun part, we do not. The network is optimized just like position parameters, only by comparing reconstruction and the original image.</p>
 
    <h2 id="citation">
     Ablation
@@ -606,9 +606,37 @@ h3.figtitle {
       </h3>
       <p>We are no longer confined to only 3 values, so lets test more. On the following images, red plot is always actual positions of splats and the green plot is projection of a hyper-dimensional cube through the embedding network to see the results of the space bending. Furthermore, image above red plot is original image and above green the reconstruction</p>
       <p>Every model is trained for 60k iterations.</p>
+      <h3>
+          Larger parameter size makes space bend better mach an object
+      </h3>
+      <p>From here we will always use learnable positional encoding with base output as it was the best in ablation.</p>
+      <img width="150%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/num_dim.png" alt="dim_num" class="center">
+      <h3>
+          Parameter size = 2, step 1k, 10k, 30k, 60k
+      </h3>
+      <img width="150%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/dim_2.png" alt="dim_2" class="center">
+      <h3>
+          Parameter size = 3, step 1k, 10k, 30k, 60k
+      </h3>
+      <img width="150%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/dim_3.png" alt="dim_3" class="center">
+      <h3>
+          Parameter size = 4, step 1k, 10k, 30k, 60k
+      </h3>
+      <img width="150%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/dim_4.png" alt="dim_4" class="center">
+      <h3>
+          Parameter size = 8, step 1k, 10k, 30k, 60k
+      </h3>
+      <img width="150%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/dim_8.png" alt="dim_8" class="center">
+      <h3>
+          Baseline, step 1k, 10k, 30k, 60k
+      </h3>
+      <p>Green is the same as red here</p>
+      <img width="150%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/dim_base.png" alt="dim_base" class="center">
+      <h2>Conclusion</h2>
+      <p>Method has potential as it surely bends space and some runs suggested that it can very well recover from poor initialization and could potentially in future be used together with hypernetworks to make generative gaussian models.</p>
+      <p>But for now it needs further improvement and testing until it matches the baseline or its improvements.</p>
   </div>
   <div class="n-footer">
   </div>
  
-
 </body></html>
