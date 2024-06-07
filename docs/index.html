@@ -454,7 +454,7 @@ h3.figtitle {
   </div>
   <div class="n-article">
    <div class="l-article">
-    <img src="../images/NN.png" width="100%">
+     <img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/NN.png" alt="NN">
    </div>
    <h2 id="abstract">
        Introduction
@@ -517,13 +517,95 @@ h3.figtitle {
     <li><strong>positional</strong> and <strong>gff</strong>: <a href="https://arxiv.org/abs/1706.03762">Positional embedding</a> like in tranformer models (yes, like Chat-GPT) and its cousin <a href="https://arxiv.org/abs/2006.10739">Gaussian fourier feature</a>. Both are some form of $[\sin(x),\cos(x)]$ embedding for each parameter variable, both can have <strong>embeding size</strong> set to change how long the embedding is (the $N$).
     Positional has set values of $[a_1,a_2,...]$ variables as progressivly smaller values $[1,\frac{1}{2},\frac{1}{4},...]$, and GFF uses random values from normal (gaussian) distribution as its variables. Both can be <strong>learnable</strong>, thst is, model will fine tune the values of $[a_1,a_2,...]$ variables. Those 2 show the best (similar) results.</li>
     </ul>
-    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/embed.png" alt="embde"></p>
+    <p><img width="25%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/embed.png" alt="embde"></p>
     <h3 id="last-one-">Last one, I promise.</h3>
     <p>You might want to ask if we need to change the training process so the model learns how to use the network. Here is the fun part, we do not. The network is optimized just like position parameters, only by comparing reconstruction and the original image. Additionally to make training a bit simpler so splats are not completely randomly spaced at start, we use Chamfer distance to place them at start, more less, where splats from original models are.</p>
 
    <h2 id="citation">
     Ablation
    </h2>
+      <p>Every test is done on drums images from nerf-synthetic dataset</p>
+      <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/drums.png" alt="drums"></p>
+      <h3>
+          Comparison of embeddings and residual connections
+      </h3>
+      <p>We tried to use residual connections to the model in a few variants, each having separate row in the table.</p>
+      <p>The ideas behind those are respectably: just network, the baseline with no residual connection; output is confined to [-1,1] with hyperbolic tangent, and than stretched and translated with learnable S, T parameters; similar, but residual is added to TanH squeeze; solution 2 with added residual.</p>
+      <p>Plus next to embedding signifies if its coefficients are optimized in training; if embedding is learnable.</p>
+      <p>Positional parameter size is 3 for fair comparison with baseline.</p>
+      <style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-08qx{background-color:#34ff34;border-color:inherit;color:#000000;text-align:center;vertical-align:top}
+.tg .tg-461s{background-color:#96fffb;border-color:inherit;color:#000000;text-align:center;vertical-align:top}
+.tg .tg-sp2s{background-color:#ffce93;border-color:inherit;color:#000000;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-pb73{background-color:#9aff99;border-color:inherit;color:#000000;text-align:center;vertical-align:top}
+.tg .tg-37xo{background-color:#ffffc7;border-color:inherit;color:#000000;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-ml2k{border-color:inherit;color:#000000;text-align:center;vertical-align:top}
+.tg .tg-8tj9{background-color:#ffffc7;border-color:inherit;color:#000000;text-align:center;vertical-align:top}
+.tg .tg-jce5{background-color:#ffce93;border-color:inherit;color:#000000;text-align:center;vertical-align:top}
+</style>
+<table class="tg"><thead>
+  <tr>
+    <th class="tg-ml2k"> </th>
+    <th class="tg-sp2s"><span style="font-style:normal;text-decoration:none">Base</span></th>
+    <th class="tg-37xo"><span style="font-style:normal;text-decoration:none">NNet</span></th>
+    <th class="tg-37xo"><span style="font-style:normal;text-decoration:none">FFT</span></th>
+    <th class="tg-37xo"><span style="font-style:normal;text-decoration:none">PE</span></th>
+    <th class="tg-37xo"><span style="font-style:normal;text-decoration:none">PE+</span></th>
+    <th class="tg-37xo"><span style="font-style:normal;text-decoration:none">GFF</span></th>
+    <th class="tg-37xo"><span style="font-style:normal;text-decoration:none">GFF+</span></th>
+  </tr></thead>
+<tbody>
+  <tr>
+    <td class="tg-37xo">Net(x)</td>
+    <td class="tg-08qx"><span style="font-weight:400;font-style:normal;text-decoration:none">32.8</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">30.9</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">14.7</span></td>
+    <td class="tg-461s"><span style="font-weight:400;font-style:normal;text-decoration:none">30.5</span></td>
+    <td class="tg-pb73"><span style="font-weight:400;font-style:normal;text-decoration:none">30.7</span></td>
+    <td class="tg-461s"><span style="font-weight:400;font-style:normal;text-decoration:none">29.3</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">27.8</span></td>
+  </tr>
+  <tr>
+    <td class="tg-37xo"><span style="font-style:normal;text-decoration:none">Tanh(Net(x))*S+T</span></td>
+    <td class="tg-jce5"> </td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">21.6</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">11.8</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">26.9</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">26.4</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">19.7</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">22.3</span></td>
+  </tr>
+  <tr>
+    <td class="tg-37xo"><span style="font-style:normal;text-decoration:none">Tanh(Net(x)+x)*S+T</span></td>
+    <td class="tg-jce5"> </td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">30.3</span></td>
+    <td class="tg-461s"><span style="font-weight:400;font-style:normal;text-decoration:none">29.0</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">28.6</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">29.5</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">28.8</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">28.5</span></td>
+  </tr>
+  <tr>
+    <td class="tg-37xo"><span style="font-style:normal;text-decoration:none">x+Tanh(Net(x))*S+T</span></td>
+    <td class="tg-jce5"> </td>
+    <td class="tg-461s"><span style="font-weight:400;font-style:normal;text-decoration:none">31.0</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">11.8</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">29.4</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">29.6</span></td>
+    <td class="tg-8tj9"><span style="font-weight:400;font-style:normal;text-decoration:none">28.1</span></td>
+    <td class="tg-461s"><span style="font-weight:400;font-style:normal;text-decoration:none">28.7</span></td>
+  </tr>
+</tbody></table>
+      <h3>
+          Comparison of different sizes of the position parameter
+      </h3>
+      <p>We are no longer confined to only 3 values, so lets test more. On the following images, red plot is always actual positions of splats and the green plot is projection of a hyper-dimensional cube through the embedding network to see the results of the space bending. Furthermore, image above red plot is original image and above green the reconstruction</p>
+      <p>Every model is trained for 60k iterations.</p>
   </div>
   <div class="n-footer">
   </div>
