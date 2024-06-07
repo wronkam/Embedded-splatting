@@ -459,12 +459,12 @@ h3.figtitle {
    <h2 id="abstract">
        Introduction
    </h2>
-          <p>This project aims to enrich <em>gaussian splatting</em> with an embedding for gaussians positions, which in theory, should allow them for faster, easier and more reliable learning of gaussins positions to better much reconstructed object.</p>
-          <p>With the help of <a href="https://colab.research.google.com/github/camenduru/gaussian-splatting-colab/blob/main/gaussian_splatting_colab.ipynb">this notebook</a>, you can train <em>gaussian splatting</em> with or without embeddings, without writing any code or downloading anything, with all options choosable with simple UI with buttons and sliders. Additionally, this notebook contains the same explenation of how the model works as this page</p>
+          <p>This project aims to enrich <em>gaussian splatting</em> with an embedding for gaussians positions. In theory, it should allow for faster, easier and more reliable learning of gaussins positions to better match reconstructed object.</p>
+          <p>With the help of <a href="https://colab.research.google.com/github/camenduru/gaussian-splatting-colab/blob/main/gaussian_splatting_colab.ipynb">this notebook</a>, you can train <em>gaussian splatting</em> with or without embeddings, without writing any code or downloading anything, with all options choosable with simple UI with buttons and sliders. Additionally, this notebook contains the same explanation of how the model works as this page</p>
           <h3 id="contents-">Contents:</h3>
           <ul>
               <li><strong>Explanation</strong>: Explanation of the project motivation and solution.</li>
-              <li><strong>Ablation</strong>: We present results of different model setups on synthetic NeRF drums dataset</li>
+              <li><strong>Ablation</strong>: Results of different model setups on synthetic NeRF drums dataset</li>
               <li><strong>Conclusion</strong>: Conclusion (as one could suspect)</li>
           </ul>
    <h2 id="Explanation">
@@ -472,9 +472,9 @@ h3.figtitle {
    </h2>
     <h3 id="what-are-we-doing-exactly-">What are we doing exactly?</h3>
     <h4 id="gaussian-splatting">Gaussian splatting</h4>
-    <p>Gaussian splatting can create 3D reconstructions of static scenes from a multi-camera capture, it means you can find a static object like a statue, walk around it and make a lot of images of it from different angles, give them to gaussian splatting and obtain rotatable, digital 3D object.</p>
+    <p>Gaussian splatting can create 3D reconstructions of static scenes from a multi-camera capture. It means you can find a static object, like a statue or a plant, walk around it and make a lot of images of it from different angles, give those to gaussian splatting and obtain a rotatable, digital 3D object.</p>
     <h5 id="How-it-works">How it works</h5>
-    <p>During training 2 main things are optimized. First the position of splats, as seen below</p>
+    <p>During training 2 main things are optimized. First the position of splats, as seen below (I will use splats and gaussians interchangeably)</p>
     <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/points.png" alt="points"></p>
     <p><small><a href="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/124_ml-for-games/gaussian/points.png"> Image</a></small></p>
     <p>The other thing are attributes of splats: color, opacity, size and how those are stretched</p>
@@ -486,10 +486,11 @@ h3.figtitle {
     <p>During training model adds new gaussians were needed and removes obsolete ones, for more details check <a href="https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/">the paper at the authors website</a>.</p>
     <p>The ONLY mechanism through which the model knows if it does the good job is by comparing the created image with the original one.</p>
     <h5 id="an-issue">An issue</h5>
+      <p>Lets consider a simplified 2D example of this method.</p>
     <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/half_ring.png" alt="ring"></p>
-    <p>If we tried to reconstruct a ring (green), but had only gaussians on the left half of it. It would take a lot of iterations for gaussians to move/replicate and reach the right side of the ring.</p>
-    <p>Could gaussians not move through the empty space, sadly NO, at each iterations the representation of the object (of any represented part of the object) must be valid, because it is compared with the original image.</p>
-    <p>Can they jump across the empty space, also no. They always move only small distances, otherwise training would be too chaotic.</p>
+    <p>If we tried to reconstruct a ring (green), but had only gaussians on the left half of it. It would take a lot of iterations for gaussians to move/replicate and reach the right side of the ring (as clearly shown with red arrows).</p>
+    <p>Could gaussians not move through the empty space? Sadly NO, at each iteration the representation of the object (of any represented part of the object) must be valid, because it is compared with the original image.</p>
+    <p>Can gaussians just jump across the empty space? Also no. They always move only small distances, otherwise training would be too chaotic.</p>
     <p>An alternative we introduce is to project the position parameter through some neural network and use the way it bends the output space to make such moves easier.</p>
     <p>A complicated sentence so <strong>lets simplify it</strong>.</p>
     <p>We keep position parameter for each gauss. Originally those are  3 values (XYZ), corresponding directly to gausiann&#39;s position.
@@ -505,18 +506,17 @@ h3.figtitle {
     <p>If we pass our positions through network it could bend space in a way where moving on the surface of the reconstructed object is much simpler.
     Bellow there are circles again and the lines show how the input space (of positional parameters values) was bent without and with network. <strong>Red lines should be all about the same distance in parameter space, around 1.</strong> Using network allows gaussians to jump across empty space, because those jumps are now short, also it makes it harder to move in the wrong direction (look at the line on the right of both circles, when network is used gaussians would need to move much further to drift away.)</p>
     <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/circles.png" alt="circle"></p>
-    <p>#%% md</p>
     <h3 id="there-is-more-">There is more.</h3>
     <p>Lets look again:
     <img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/NN.png" alt="NN"></p>
-    <p>So about this green part. <a href="https://arxiv.org/abs/2006.10739">Reaserch</a> suggest that before passing some dense, low dimmensional (as in out case) input to the network it will be helpfull to use some specific embedding. Thats is, for example instead of $[x]$ pass $[x,\sin(x),\cos(x)]$ to our network.</p>
-    <p>We have a few options:</p>
+    <p>So about this green part. <a href="https://arxiv.org/abs/2006.10739">Research</a> suggest that before passing some dense, low dimensional (as in out case) input to the network, it will be beneficial to use some specific embedding. That is, for example instead of [x] pass 3 values [x, sin(x),cos(x)] to our network.</p>
+    <p>There are a few specific options we considered testing:</p>
     <ul>
-    <li><strong>none</strong>: no network, no embedding</li>
-    <li><strong>net</strong>: just network, no embedding</li>
+    <li><strong>none</strong>: no network, no embedding, the baseline</li>
+    <li><strong>net</strong>: just network, no embedding, to test usefulness of an embedding</li>
     <li><strong>fft</strong>: we calculate the <a href="https://en.wikipedia.org/wiki/Fast_Fourier_transform">fast fourier transform</a> of the positional parameter. Does not work well, but it is here.</li>
-    <li><strong>positional</strong> and <strong>gff</strong>: <a href="https://arxiv.org/abs/1706.03762">Positional embedding</a> like in transformer models (yes, like Chat-GPT) and its cousin <a href="https://arxiv.org/abs/2006.10739">Gaussian fourier feature</a>. Both are some form of $[\sin(x),\cos(x)]$ embedding for each parameter variable, both can have <strong>embedding size</strong> set to change how long the embedding is (the $N$).
-    Positional has set values of [a<sub>1</sub>,a<sub>2</sub>,...]$ variables as progressively smaller values $[1,1/2,1/4,...]$, and GFF uses random values from normal (gaussian) distribution as its variables. Both can be <strong>learnable</strong>, thst is, model will fine tune the values of $[a_1,a_2,...]$ variables. Those 2 show the best (similar) results.</li>
+    <li><strong>positional</strong> and <strong>gff</strong>: <a href="https://arxiv.org/abs/1706.03762">Positional embedding</a> like in transformer models (yes, like Chat-GPT) and its cousin <a href="https://arxiv.org/abs/2006.10739">Gaussian fourier feature</a>. Both are some form of [sin(x), cos(x)] embedding for each parameter variable, both can have <strong>embedding size</strong> set to change how long the embedding is (the $N$).
+    Positional has set values of [a<sub>1</sub>,a<sub>2</sub>,...] variables as progressively smaller values [1,1/2,1/4,...], and GFF uses random values from normal (gaussian) distribution as its variables. Both can be <strong>learnable</strong>, thst is, model will fine tune the values of [a<sub>1</sub>,a<sub>2</sub>,...] variables. Those 2 show the best (similar) results.</li>
     </ul>
     <p><img width="45%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/embed.png" alt="embde"></p>
     <h3 id="last-one-">Last one, I promise.</h3>
