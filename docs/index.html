@@ -3,14 +3,11 @@
 <html lang="" xml:lang="" xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   
   <meta content="width=device-width, initial-scale=1" name="viewport">
-  <link href="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/img/favicon.ico" rel="shortcut icon">
   <title>
-   Alias-Free Generative Adversarial Networks (StyleGAN3)
+   Embedded Splatting
   </title>
-  <meta content="Alias-Free Generative Adversarial Networks (StyleGAN3)" property="og:title">
-  <meta content="We eliminate “texture sticking” in GANs through a comprehensive overhaul of all signal processing aspects of the generator, paving the way for better synthesis of video and animation." name="description" property="og:description">
-  <meta content="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/img/stylegan3-teaser-1920x1006.png" property="og:image">
-  <meta content="https://nvlabs.github.io/stylegan3" property="og:url">
+  <meta content="Embedded Splatting" property="og:title">
+  <meta content="https://wronkam.github.io/Embedded-splatting" property="og:url">
   <style type="text/css">
    :root {
     --small-thumb-border-radius: 2px;
@@ -444,457 +441,89 @@ h3.figtitle {
   </div>
   <div class="n-title">
    <h1>
-    Alias-Free Generative Adversarial Networks (StyleGAN3)
+    Embedded-splatting
    </h1>
   </div>
   <div class="n-byline">
    <div class="byline">
     <ul class="authors">
      <li>
-      Tero Karras
-      <sup>
-       1
-      </sup>
+      Michał Wronka
      </li>
-     <li>
-      Miika Aittala
-      <sup>
-       1
-      </sup>
-     </li>
-     <li>
-      Samuli Laine
-      <sup>
-       1
-      </sup>
-     </li>
-     <li>
-      Erik Härkönen
-      <sup>
-       2, 1
-      </sup>
-     </li>
-     <li>
-      Janne Hellsten
-      <sup>
-       1
-      </sup>
-     </li>
-     <li>
-      Jaakko Lehtinen
-      <sup>
-       1, 2
-      </sup>
-     </li>
-     <li>
-      Timo Aila
-      <sup>
-       1
-      </sup>
-     </li>
-    </ul>
-    <ul class="authors affiliations">
-     <li>
-      <sup>
-       1
-      </sup>
-      NVIDIA
-     </li>
-     <li>
-      <sup>
-       2
-      </sup>
-      Aalto University
-     </li>
-    </ul>
    </div>
   </div>
   <div class="n-article">
    <div class="l-article">
-    <img src="files/stylegan3-teaser-1920x1006.png" width="100%">
+    <img src="../images/NN.png" width="100%">
    </div>
    <h2 id="abstract">
-    Abstract
+       Introduction
    </h2>
-   <p>
-    We observe that despite their hierarchical convolutional nature, the synthesis process of typical generative adversarial networks depends on absolute pixel coordinates in an unhealthy manner. This manifests itself as, e.g., detail appearing to be glued to image coordinates instead of the surfaces of depicted objects. We trace the root cause to careless signal processing that causes aliasing in the generator network. Interpreting all signals in the network as continuous, we derive generally applicable, small architectural changes that guarantee that unwanted information cannot leak into the hierarchical synthesis process. The resulting networks match the FID of StyleGAN2 but differ dramatically in their internal representations, and they are fully equivariant to translation and rotation even at subpixel scales. Our results pave the way for generative models better suited for video and animation.
-   </p>
-   <h2 id="links">
-    Links
+          <p>This project aims to enrich <em>gaussian splatting</em> with an embedding for gaussians positions, which in theory, should allow them for faster, easier and more reliable learning of gaussins positions to better much reconstructed object.</p>
+          <p>With the help of <a href="https://colab.research.google.com/github/camenduru/gaussian-splatting-colab/blob/main/gaussian_splatting_colab.ipynb">this notebook</a>, you can train <em>gaussian splatting</em> with or without embeddings, without writing any code or downloading anything, with all options choosable with simple UI with buttons and sliders. Additionally, this notebook contains the same explenation of how the model works as this page</p>
+          <h3 id="contents-">Contents:</h3>
+          <ul>
+              <li><strong>Explanation</strong>: Explanation of the project motivation and solution.</li>
+              <li><strong>Ablation</strong>: We present reults of different model setups on synthetic NeRF drums dataset</li>
+          </ul>
+   <h2 id="Explanation">
+    Explanation
    </h2>
-   <div class="grid download-section">
-    <div class="download-thumb">
-     <a href="https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf">
-      <img class="dropshadow" src="files/paper-pdf-512.png">
-     </a>
-    </div>
-    <div class="download-links">
-     <ul>
-      <li>
-       <a href="https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf">
-        Paper PDF
-       </a>
-      </li>
-      <li>
-       <a href="https://arxiv.org/abs/2106.12423">
-        arXiv
-       </a>
-      </li>
-      <li>
-       <a href="https://github.com/NVlabs/stylegan3">
-        Code release on GitHub
-       </a>
-      </li>
-     </ul>
-    </div>
-   </div>
-   <h2 id="videos">
-    Videos
-   </h2>
-   <p>
-    The first two videos demonstrate the “texture sticking” issue in in two “cinemagraphs” created using generators trained on the unaligned FFHQ-U dataset. The looping videos show small random walks around a central point in the latent space. Observe how the details (hairs, wrinkles, etc.) the StyleGAN2 result (left) appear to be glued to the screen coordinates while the face moves under it, while all details transform coherently in our result (right).
-   </p>
-   <div class="l-page video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
+    <h3 id="what-are-we-doing-exactly-">What are we doing exactly?</h3>
+    <h4 id="gaussian-splatting">Gaussian splatting</h4>
+    <p>Gaussian splatting can create 3D reconstructions of static scenes from a multi-camera capture, it means you can find a static object like a statue, walk around it and make a lot of images of it from different angles, give them to gaussian splatting and obtain rotatable, digital 3D object.</p>
+    <h5 id="How-it-works">How it works</h5>
+    <p>During training 2 main things are optimized. First the position of splats, as seen below</p>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/points.png" alt="points"></p>
+    <p><small><a href="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/124_ml-for-games/gaussian/points.png"> Image</a></small></p>
+    <p>The other thing are attributes of splats: color, opacity, size and how those are stretched</p>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/ellipsoids.png" alt="elipsoids"></p>
+    <p><small><a href="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/124_ml-for-games/gaussian/ellipsoids.png"> Image</a></small></p>
+    <p>Finally through rasterization, a rendering method, we can obtain a final view for a given camera position</p>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/site/images/bicycle.png" alt="bicycle"></p>
+    <p><small><a href="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/124_ml-for-games/gaussian/bicycle.png"> Image</a></small></p>
+    <p>During training model adds new gaussians were needed and removes obsolete ones, for more details check <a href="https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/">the paper at the authors website</a>.</p>
+    <p>The ONLY mechanism through which the model knows if it does the good job is by comparing the created image with the original one.</p>
+    <h5 id="an-issue">An issue</h5>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/half_ring.png" alt="ring"></p>
+    <p>If we tried to reconstruct a ring (green), but had only gaussians on the left half of it. It would take a lot of iterations for gaussians to move/replicate and reach the right side of the ring.</p>
+    <p>Could gaussians not move through the empty space, sadly NO, at each iterations the representation of the object (of any represented part of the object) must be valid, because it is compared with the original image.</p>
+    <p>Can they jump across the empty space, also no. They always move only small distances, otherwise training would be too chaotic.</p>
+    <p>An alternative we introduce is to project the position parameter through some neural network and use the way it bends the output space to make such moves easier.</p>
+    <p>A complicated sentence so <strong>lets simplify it</strong>.</p>
+    <p>We keep position parameter for each gauss. Originally those are  3 values (XYZ), corresponding directly to gausiann&#39;s position.
+    Instead, we will use N (number can be adjusted) values that will be learnable and passed through a network to obtain gausiann&#39;s position,</p>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/NN.png" alt="NN"></p>
+    <h4 id="-why-do-we-do-it-"><strong>Why</strong> do we do it?</h4>
+    <p>Skipping all the math, each layer of neural network can be explained as set of operations on euclidian space. Imagine an object in space (cube maybe), when passed through a layer of network it will be, rotated, stretched, rotated again and translated (math word for moved).
+    <img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/NN_steps.png" alt="NN_steps"></p>
+    <p>Now the hard part. After each layer there is an activation function, which add some non-linear operation, like moving all <em>x</em> values below $0$ to exactly to $0$ (ReLU) or different scale below $0$ (LReLU) or do something more drastic (tanh, sigmoid, etc). Those must be added for math reasons and greatly expands the range of objects that the input, i.e cube, could be transformed into.</p>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/activation.png" alt="act"></p>
+    <p><a href="https://en.wikipedia.org/wiki/Universal_approximation_theorem#Arbitrary-width_case">Math wise</a>, 2 layers with activation can transform any object into any other object (when the dimension of those transformation, that is layer, is not measly 3D, but approaches infinite dimensions). So normally whe use more layers to compensate.</p>
+    <h4 id="this-was-not-fun-i-asked-why-">This was not fun, I asked <strong>why</strong>?</h4>
+    <p>If we pass our positions through network it could bend space in a way where moving on the surface of the reconstructed object is much simpler.
+    Bellow there are circles again and the lines show how the input space (of positional parameters values) was bent without and with network. <strong>Red lines should be all about the same distance in parameter space, around 1.</strong> Using network allows gaussians to jump across empty space, because those jumps are now short, also it makes it harder to move in the wrong direction (look at the line on the right of both circles, when network is used gaussians would need to move much further to drift away.)</p>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/circles.png" alt="circle"></p>
+    <p>#%% md</p>
+    <h3 id="there-is-more-">There is more.</h3>
+    <p>Lets look again:
+    <img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/NN.png" alt="NN"></p>
+    <p>So about this green part. <a href="https://arxiv.org/abs/2006.10739">Reaserch</a> suggest that before passing some dense, low dimmensional (as in out case) input to the network it will be helpfull to use some specific embedding. Thats is, for example instead of $[x]$ pass $[x,\sin(x),\cos(x)]$ to our network.</p>
+    <p>We have a few options:</p>
+    <ul>
+    <li><strong>none</strong>: no network, no embedding</li>
+    <li><strong>net</strong>: just network, no embedding</li>
+    <li><strong>fft</strong>: we calculate the <a href="https://en.wikipedia.org/wiki/Fast_Fourier_transform">fast fourier transform</a> of the positional parameter. Does not work well, but it is here.</li>
+    <li><strong>positional</strong> and <strong>gff</strong>: <a href="https://arxiv.org/abs/1706.03762">Positional embedding</a> like in tranformer models (yes, like Chat-GPT) and its cousin <a href="https://arxiv.org/abs/2006.10739">Gaussian fourier feature</a>. Both are some form of $[\sin(x),\cos(x)]$ embedding for each parameter variable, both can have <strong>embeding size</strong> set to change how long the embedding is (the $N$).
+    Positional has set values of $[a_1,a_2,...]$ variables as progressivly smaller values $[1,\frac{1}{2},\frac{1}{4},...]$, and GFF uses random values from normal (gaussian) distribution as its variables. Both can be <strong>learnable</strong>, thst is, model will fine tune the values of $[a_1,a_2,...]$ variables. Those 2 show the best (similar) results.</li>
+    </ul>
+    <p><img width="100%" src="https://raw.githubusercontent.com/wronkam/Embedded-splatting/main/images/embed.png" alt="embde"></p>
+    <h3 id="last-one-">Last one, I promise.</h3>
+    <p>You might want to ask if we need to change the training process so the model learns how to use the network. Here is the fun part, we do not. The network is optimized just like position parameters, only by comparing reconstruction and the original image. Additionally to make training a bit simpler so splats are not completely randomly spaced at start, we use Chamfer distance to place them at start, more less, where splats from original models are.</p>
 
-        <div id="controller" style="top:2145.16259765625px; left:220.40000915527344px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <!-- t=0.001 is a hack to make iPhone show video thumbnail -->
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_0_ffhq_cinemagraphs.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 1a:
-      </strong>
-      FFHQ-U Cinemagraph
-     </div>
-    </div>
-   </div>
-   <div class="l-page video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:2853.8125px; left:220.40000915527344px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <!-- t=0.001 is a hack to make iPhone show video thumbnail -->
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_1_ffhq_cinemagraphs.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 1b:
-      </strong>
-      FFHQ-U Cinemagraph
-     </div>
-    </div>
-   </div>
-   <p>
-    The following videos show interpolations between hand-picked latent points in several datasets. Observe again how the textural detail appears fixed in the StyleGAN2 result, but transforms smoothly with the rest of the scene in the alias-free StyleGAN3.
-   </p>
-   <div class="l-page video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:3660.0625px; left:220.40000915527344px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <!-- t=0.001 is a hack to make iPhone show video thumbnail -->
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_2_metfaces_interpolations.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 2:
-      </strong>
-      MetFaces interpolations
-     </div>
-    </div>
-   </div>
-   <div class="l-page video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:4318.46240234375px; left:220.40000915527344px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_3_afhq_interpolations.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 3:
-      </strong>
-      AFHQv2 interpolations
-     </div>
-    </div>
-   </div>
-   <p>
-    We note, in particular, how StyleGAN3 appears to have learned to mimic camera motion in the Beaches dataset.
-   </p>
-   <div class="l-page video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:5047.2626953125px; left:220.40000915527344px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_4_beaches_interpolations.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 4:
-      </strong>
-      Beaches interpolations
-     </div>
-    </div>
-   </div>
-   <p>
-    The following video illustrates translational equivariance, or lack thereof, in several “bridge” configurations, and aims to visually demonstrate the meaning of EQ-T equivariance scores. In all panels, the first image is the result of running the corresponding generator with analytically translated Fourier input features. The second image has obtained from the first by “untransforming” the pixels using the inverse translation by an extremely high-quality resampling filter. For a perfectly equivariant generator, the first two images are the same, modulo image boundaries (not shown due to light cropping) and numerical noise from the resampling. The third image visualizes the difference of the first two images. As can be seen, EQ-T scores in the 60 dB range are essentially visually perfect. Please consult the Appendix for technical details.
-   </p>
-   <div class="l-page video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:5966.46240234375px; left:220.40000915527344px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_5_figure_3_left_equivariance_quality.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 5:
-      </strong>
-      Visualization of translation equivariance (Figure 3, left)
-     </div>
-    </div>
-   </div>
-   <p>
-    The following video illustrates rotation equivariance in a manner similar to the previous video. Our StyleGAN3-T, which has only been designed for translation equivariance, fails completely, as expected. The following comparison method is a variant of StyleGAN3-T that uses a p4 symmetric G-CNN for rotation equivariance. The model shows a cyclic behavior, where the rotation is exact at multiples of 90 degrees but breaks down at intermediate angles. Our StyleGAN3-R features high-quality, though not visually perfect rotation equivariance.
-   </p>
-   <div class="l-article video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:6871.0625px; left:404.3999938964844px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_6_figure_5_right_g-cnn_comparison.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 6:
-      </strong>
-      Visualization of rotation equivariance (Figure 5, right)
-     </div>
-    </div>
-   </div>
-   <p>
-    The following video illustrates the aliasing inherent to pointwise nonlinearities (here, ReLU), and our solution.
-    <strong>
-     Left column:
-    </strong>
-    The original bandlimited signal z. Its ideal version (top) is sampled (middle), and then reconstructed from the samples (bottom). As the sampling rate is high enough to capture the signal, no aliasing occurs.
-    <strong>
-     Middle column:
-    </strong>
-    applying a pointwise non-linearity in the continuous domain (top) yields a non-smooth function due to clipping at the zero crossings. Sampling this signal (middle) and reconstructing the function from the samples (bottom) yields an aliased result, as the high frequencies created by the clipping cannot be represented by the sample grid.
-    <strong>
-     Right column:
-    </strong>
-    applying a low-pass filter to the ReLUed function in the continuous domain (top) yields again a smooth function; sampling it (middle) allows a faithful reconstruction (bottom).
-   </p>
-   <div class="l-article video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:8066.5625px; left:404.3999938964844px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_7_figure_2_right_filtered_nonlinearity.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 7:
-      </strong>
-      Visualization of the filtered non-linearity
-     </div>
-    </div>
-   </div>
-   <p>
-    The below video compares StyleGAN3’s internal activations to those of StyleGAN2 (top). Our alias-free translation (middle) and rotation (bottom) equivariant networks build the image in a radically different manner from what appear to be multi-scale phase signals that follow the features seen in the final image. Due to our alias-free construction, these signals must control both the appearance of as well as the relative positions of image features; we hypothesize that the local oriented oscillations form a basis that enables hierarchical localization. Our construction appears to make it natural for the network to construct them from the low-frequency input Fourier features.
-   </p>
-   <div class="l-page video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:8809.4755859375px; left:220.40000915527344px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_8_internal_activations.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 8:
-      </strong>
-      Internal activations
-     </div>
-    </div>
-   </div>
-   <p>
-    The following video clarifies the slice visualization of Figure 1, right.
-   </p>
-   <div class="l-article video"><div class="vsc-controller"><template shadowrootmode="open">
-        <style>
-          @import "chrome-extension://nkajomkdmekhjcjhaaidcinjkmhkkmeo/shadow.css";
-        </style>
-
-        <div id="controller" style="top:9591.4755859375px; left:404.3999938964844px; opacity:0.2">
-          <span data-action="drag" class="draggable">1.00</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">−</button>
-            <button data-action="faster">+</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">×</button>
-          </span>
-        </div>
-      </template></div>
-    <video controls="" loop="" width="100%">
-     <source src="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/videos/video_9_slice_visualization.mp4#t=0.001" type="video/mp4">
-    </video>
-    <div class="videocaption">
-     <div>
-      <strong>
-       Video 9:
-      </strong>
-      Slice visualization. Top row: StyleGAN3-T, bottom row: StyleGAN2.
-     </div>
-    </div>
-   </div>
    <h2 id="citation">
-    Citation
+    Ablation
    </h2>
-   <pre><code>@inproceedings{Karras2021,
-  author = {Tero Karras and Miika Aittala and Samuli Laine and Erik H\"ark\"onen and Janne Hellsten and Jaakko Lehtinen and Timo Aila},
-  title = {Alias-Free Generative Adversarial Networks},
-  booktitle = {Proc. NeurIPS},
-  year = {2021}
-}</code></pre>
-   <h2 id="license">
-    License
-   </h2>
-   <p>
-    Images, text and video files on this site are made freely available for non-commercial use under the
-    <a href="https://nvlabs-fi-cdn.nvidia.com/_web/stylegan3/LICENSE.txt">
-     Creative Commons CC BY-NC 4.0 license
-    </a>
-    . Feel free to use any of the material in your own work, as long as you give us appropriate credit by mentioning the title and author list of our paper.
-   </p>
-   <h2 id="acknowledgments">
-    Acknowledgments
-   </h2>
-   <p>
-    We thank David Luebke, Ming-Yu Liu, Koki Nagano, Tuomas Kynkäänniemi, and Timo Viitanen for reviewing early drafts and helpful suggestions. Frédo Durand for early discussions. Tero Kuosmanen for maintaining our compute infrastructure. AFHQ authors for an updated version of their dataset. Getty Images for the training images in the BEACHES dataset.
-   </p>
   </div>
   <div class="n-footer">
   </div>
